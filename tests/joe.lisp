@@ -1,3 +1,15 @@
+;(define-macro let (a . b)
+;              ;(cons (cons 'lambda (map car a)
+;              (cons 'println (cons (cons 'quote a) nil)))
+
+(define-macro infix (a)
+              (list (car (cdr a)) (car a) (car (cdr (cdr a)))))
+
+;(let ((a 4)) 'c)
+
+(println (infix (1 + 2)))
+(println (+ 1 2))
+
 (println (vector 1 2 3 4))
 (println true)
 ;(println #\c)
@@ -5,9 +17,9 @@
 (println (map (fn (a) (+ a 1)) (quote (1 2 3 4))))
 (foreach println (quote (1 2 3 4)))
 
-(println (symbol->string (quote fart)))
-(println (symbol->string 'fart))
-(println (string->symbol "fart"))
+(println (symbol->string (quote amogus)))
+(println (symbol->string 'amogus))
+(println (string->symbol "amogus"))
 (println (quote (1 . 2)))
 
 (define a (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20))
@@ -27,24 +39,24 @@
 
 (println (vector-ref v 1))
 
-;(define chuddy (lambda (poopy) 
-;  (writeln (if poopy "your momma ate poopy" "your momma did not eat poopy")) 
-;  (chuddy (not poopy))))
+;(define chuddy (lambda (impostor) 
+;  (writeln (if impostor "your momma is the impostor" "your momma is not the impostor")) 
+;  (chuddy (not impostor))))
 ;
 ;(chuddy true)
 
 
 (println (cons 1 (cons 2 nil)))
-(writeln "i farted onto my " (cons 1 2))
+(writeln "when the " (cons 1 2))
 (println (list 1 2 3))
 ;(while true (car (cons 1 2)) (println a (cdr (cons 1 2))) (println "joE") a (gc))
 
-(define fart (fn (a) (fn () a)))
-fart
-(fart 2)
-(println ((fart 2)))
-(define fart (fn (a . b) (println a) (println b)))
-(fart 1 2)
-(fart 1 2 3 4 5)
+(define amogus (fn (a) (fn () a)))
+amogus
+(amogus 2)
+(println ((amogus 2)))
+(define amogus (fn (a . b) (println a) (println b)))
+(amogus 1 2)
+(amogus 1 2 3 4 5)
 
 (println 'impostor)
