@@ -94,15 +94,19 @@ list_stuff :: proc(state: ^InterpreterState) {
         return reverse(ret)
     }))
 
+    call_on :: proc() {
+    }
+
     addGlobal(state, "map", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        println(car(cdr(node)), s)
         cur := eval(car(cdr(node)), s)
+        println(cur, s)
         ret: ^Node = nil
 
-        e := consNode(eval(car(node), s), consNode(nil, nil))
+        e := eval(car(node), s)
 
         for isCons(cur) {
-            set_car(cdr(e), car(cur))
-            ret = consNode(eval(e, s), ret)
+            ret = consNode(call_no_eval(s, e, consNode(car(cur), nil)), ret)
             cur = cdr(cur)
         }
 
@@ -112,11 +116,10 @@ list_stuff :: proc(state: ^InterpreterState) {
     addGlobal(state, "foreach", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         cur := eval(car(cdr(node)), s)
 
-        e := consNode(eval(car(node), s), consNode(nil, nil))
+        e := eval(car(node), s)
 
         for isCons(cur) {
-            set_car(cdr(e), car(cur))
-            eval(e, s)
+            call_no_eval(s, e, consNode(car(cur), nil))
             cur = cdr(cur)
         }
 
@@ -149,6 +152,10 @@ builtin_stuff :: proc(state: ^InterpreterState) {
             s.globals[asSymbol(c.car)] = eval(car(c.cdr), s)
         }
         return nil
+    }))
+
+    addGlobal(state, "nil?", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        return boolNode(eval(car(node), s) == nil)
     }))
 }
 
@@ -210,13 +217,12 @@ string_stuff :: proc(state: ^InterpreterState) {
     }))
 
     addGlobal(state, "string-foreach", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
-        e := consNode(eval(car(node), s), consNode(nil, nil))
+        e := eval(car(node), s)
 
         str := asString(eval(car(cdr(node)), s))
 
         for c in str {
-            set_car(cdr(e), charNode(c))
-            eval(e, s)
+            call_no_eval(s, e, consNode(charNode(c), nil))
         }
 
         return nil
@@ -234,6 +240,13 @@ control_flow_stuff :: proc(state: ^InterpreterState) {
 
     addGlobal(state, "do", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         return evalL(node, s)
+    }))
+
+    addGlobal(state, "dotimes", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        for i in 0..<int(asNumber(eval(car(node), s))) {
+            evalL(node, s)
+        }
+        return nil
     }))
 
     addGlobal(state, "when", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node { // could be a macro!

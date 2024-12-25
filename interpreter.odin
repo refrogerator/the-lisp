@@ -57,6 +57,13 @@ createInterpreter :: proc() -> ^InterpreterState {
 
     append(&state.allocStack, make([dynamic]rawptr))
 
+    file, err := os.read_entire_file_from_filename("core/builtin.lisp")
+    if !err {
+        fmt.println("builtins not found")
+        os.exit(1)
+    }
+    defer delete(file);
+
     context.allocator = state.allocator
 
     addGlobal(state, "nil", nil)
@@ -78,6 +85,9 @@ createInterpreter :: proc() -> ^InterpreterState {
     string_stuff(state)
     control_flow_stuff(state)
 
+    temp := read(string(file), state)
+    evalL(temp, state)
+
     return state
 }
 
@@ -95,6 +105,77 @@ createInterpreter :: proc() -> ^InterpreterState {
 //    pop(&s.stack)
 //}
 
+call_lambda_internal :: proc(s: ^InterpreterState, e: bool, lambda: Lambda, args: ^Node) -> ^Node {
+    curIn := args
+    curArg := lambda.args
+
+    m := make(map[Symbol]^Node)
+
+    if lambda.captures != nil {
+        for k, v in lambda.captures {
+            m[k] = v
+        }
+    }
+
+    for isCons(curArg) { // TODO arity checking
+        if car(curIn) == nil {
+            error("not enough arguments were given")
+        }
+        m[asSymbol(car(curArg))] = eval(car(curIn), s) if e else car(curIn)
+        curIn = cdr(curIn)
+        curArg = cdr(curArg)
+    }
+
+    if curArg != nil {
+        if car(curIn) == nil {
+            error("not enough arguments were given")
+        }
+
+        ret: ^Node = nil
+        for isCons(curIn) { // TODO arity checking
+            ret = consNode(eval(car(curIn), s) if e else car(curIn), ret)
+            curIn = cdr(curIn)
+        }
+
+        m[asSymbol(curArg)] = reverse(ret)
+    }
+
+    append(&s.stack, m)
+
+    temp: ^Node
+    if e {
+        temp = evalL(lambda.body, s) 
+    } else {
+        _temp := evalL(lambda.body, s)
+        println(_temp, s)
+        temp = eval(evalL(lambda.body, s), s) 
+    }
+
+    pop(&s.stack)
+
+    return temp
+}
+
+call_builtin :: proc(s: ^InterpreterState, builtin: Builtin, args: ^Node) -> ^Node {
+    return builtin.tr(args, s)
+}
+
+call_no_eval :: proc(s: ^InterpreterState, fn: ^Node, args: ^Node) -> ^Node {
+    #partial switch f in eval(fn, s) {
+    case Builtin:
+        temp := f.tr(args, s)
+        return temp
+    case Macro:
+        return call_lambda_internal(s, false, Lambda(f), args)
+    case Lambda:
+        return call_lambda_internal(s, false, f, args)
+    case:
+        fmt.eprintln("can't call non-function", f)
+        print(fn,s)
+        os.exit(1)
+    }
+}
+
 eval :: proc(node: ^Node, s: ^InterpreterState) -> ^Node {
     if node == nil {
         return nil
@@ -103,93 +184,17 @@ eval :: proc(node: ^Node, s: ^InterpreterState) -> ^Node {
     case Cons:
         #partial switch f in eval(n.car, s) {
         case Builtin:
-            append(&s.allocStack, make([dynamic]rawptr, (cast(^MarkSweepGC)s.allocator.data).backing_allocator))
+            //append(&s.allocStack, make([dynamic]rawptr, (cast(^MarkSweepGC)s.allocator.data).backing_allocator))
             //mark_sweep_pause(s.allocator)
             temp := f.tr(n.cdr, s)
 
-            delete(pop(&s.allocStack))
+            //delete(pop(&s.allocStack))
             //mark_sweep_unpause(s.allocator)
             return temp
         case Macro:
-            curIn := n.cdr
-            curArg := f.args
-
-            m := make(map[Symbol]^Node, (cast(^MarkSweepGC)s.allocator.data).backing_allocator)
-
-            for isCons(curArg) { // TODO arity checking
-                if car(curIn) == nil {
-                    error("not enough arguments were given")
-                }
-                m[asSymbol(car(curArg))] = car(curIn)
-                curIn = cdr(curIn)
-                curArg = cdr(curArg)
-            }
-
-            if curArg != nil {
-                if car(curIn) == nil {
-                    error("not enough arguments were given")
-                }
-
-                ret: ^Node = nil
-                for isCons(curIn) { // TODO arity checking
-                    ret = consNode(car(curIn), ret)
-                    curIn = cdr(curIn)
-                }
-
-                m[asSymbol(curArg)] = reverse(ret)
-            }
-
-            append(&s.stack, m)
-            
-            _temp := evalL(f.body, s)
-            //println(_temp, s)
-            temp := eval(evalL(f.body, s), s) 
-
-            pop(&s.stack)
-
-            return temp
+            return call_lambda_internal(s, false, Lambda(f), n.cdr)
         case Lambda:
-            curIn := n.cdr
-            curArg := f.args
-
-            m := make(map[Symbol]^Node)
-
-            if f.captures != nil {
-                for k, v in f.captures {
-                    m[k] = v
-                }
-            }
-
-            for isCons(curArg) { // TODO arity checking
-                if car(curIn) == nil {
-                    error("not enough arguments were given")
-                }
-                m[asSymbol(car(curArg))] = eval(car(curIn), s)
-                curIn = cdr(curIn)
-                curArg = cdr(curArg)
-            }
-
-            if curArg != nil {
-                if car(curIn) == nil {
-                    error("not enough arguments were given")
-                }
-
-                ret: ^Node = nil
-                for isCons(curIn) { // TODO arity checking
-                    ret = consNode(eval(car(curIn), s), ret)
-                    curIn = cdr(curIn)
-                }
-
-                m[asSymbol(curArg)] = reverse(ret)
-            }
-
-            append(&s.stack, m)
-            
-            temp := evalL(f.body, s) 
-
-            pop(&s.stack)
-
-            return temp
+            return call_lambda_internal(s, true, f, n.cdr)
         case:
             fmt.eprintln("can't call non-function", f)
             print(n.car,s)
