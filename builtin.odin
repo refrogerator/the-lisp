@@ -145,6 +145,11 @@ builtin_stuff :: proc(state: ^InterpreterState) {
     //addGlobal(state, "let", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
     //}))
 
+    addGlobal(state, "set!", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        setSymbol(asSymbol(car(node)), eval(car(cdr(node)), s), s)
+        return nil
+    }))
+
     addGlobal(state, "define", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         c := asCons(node)
         if isCons(c.car) {

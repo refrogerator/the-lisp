@@ -28,19 +28,34 @@ toSymbol :: proc(s: string, state: ^InterpreterState) -> Symbol {
 }
 
 findSymbol :: proc(sym: Symbol, state: ^InterpreterState) -> ^Node {
-    ret: ^Node
-    ok := false
     if len(state.stack) > 0 {
-        ret, ok = last(state.stack)[sym]
-    }
-    if !ok {
-        ret, ok = state.globals[sym]
-        if !ok {
-            fmt.println("symbol", state.symbols[sym], "doesn't exist")
-            os.exit(1)
+        ret, ok := last(state.stack)[sym]
+        if ok {
+            return ret
         }
     }
+
+    ret, ok := state.globals[sym]
+    if !ok {
+        fmt.println("symbol", state.symbols[sym], "doesn't exist")
+        os.exit(1)
+    }
     return ret
+}
+
+setSymbol :: proc(sym: Symbol, val: ^Node, state: ^InterpreterState) {
+    if len(state.stack) > 0 {
+        ok := sym in last(state.stack)
+        last(state.stack)[sym] = val
+        return
+    }
+
+    ok := sym in state.globals
+    if !ok {
+        fmt.println("symbol", state.symbols[sym], "doesn't exist")
+        os.exit(1)
+    }
+    state.globals[sym] = val
 }
 
 addGlobal :: proc(state: ^InterpreterState, key: string, value: ^Node) {

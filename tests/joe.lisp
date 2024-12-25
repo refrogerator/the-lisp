@@ -7,17 +7,13 @@
 
 ;(println (map first '((1 2) (3 4))))
 
-(define-macro let (a . b)
-              ;(cons (cons 'lambda (map first a)
-              ;(list 'println (list 'quote a)))
-              (list 'do 
-                (list 'lambda (map first a))
-                ; yea so uh this is gonna be ez
-                (cons 'do b)))
 
-(let ((a 4)) 'c 'd)
+(dotimes (i 10) (println i))
 
-;(dotimes 10 (writeln "500!"))
+;(let ((a 4) 
+;      (b 2))
+  ;(println a))
+
 ;
 ;(define-macro infix (a)
 ;              (list (second a) (first a) (third a)))
