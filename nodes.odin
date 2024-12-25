@@ -146,6 +146,17 @@ asNumber :: proc(node: ^Node) -> Number {
     return 0
 }
 
+asChar :: proc(node: ^Node) -> rune {
+    if node == nil {
+        error("node is not of type char")
+    }
+    if n, ok := node.(rune); ok {
+        return n
+    }
+    error("node is not of type char")
+    return 0
+}
+
 asBool :: proc(node: ^Node) -> bool {
     if node == nil {
         error("node is not of type bool")

@@ -47,6 +47,9 @@ printInternal :: proc(input: ^Node, pretty: bool, s: ^InterpreterState) {
                 fmt.print(v)
             }
         case Symbol:
+            if pretty {
+                fmt.print('\'')
+            }
             fmt.print(s.symbols[v])
         case Macro:
             fmt.print("(macro ")

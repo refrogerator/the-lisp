@@ -98,9 +98,7 @@ list_stuff :: proc(state: ^InterpreterState) {
     }
 
     addGlobal(state, "map", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
-        println(car(cdr(node)), s)
         cur := eval(car(cdr(node)), s)
-        println(cur, s)
         ret: ^Node = nil
 
         e := eval(car(node), s)
@@ -144,6 +142,9 @@ builtin_stuff :: proc(state: ^InterpreterState) {
         return nil
     }))
 
+    //addGlobal(state, "let", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+    //}))
+
     addGlobal(state, "define", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         c := asCons(node)
         if isCons(c.car) {
@@ -152,6 +153,14 @@ builtin_stuff :: proc(state: ^InterpreterState) {
             s.globals[asSymbol(c.car)] = eval(car(c.cdr), s)
         }
         return nil
+    }))
+
+    addGlobal(state, "gensym", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        if node != nil {
+            return symNode(fmt.aprintf("%s%i", s.symbols[asSymbol(eval(car(node), s))], len(s.symbols)), s)
+        } else {
+            return symNode(fmt.aprintf("g%i", len(s.symbols)), s)
+        }
     }))
 
     addGlobal(state, "nil?", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
@@ -204,7 +213,6 @@ vector_stuff :: proc(state: ^InterpreterState) {
     addGlobal(state, "vector-ref", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         return asVector(eval(car(node), s))[cast(int)asNumber(eval(car(cdr(node)), s))]
     }))
-
 }
 
 string_stuff :: proc(state: ^InterpreterState) {
@@ -214,6 +222,14 @@ string_stuff :: proc(state: ^InterpreterState) {
 
     addGlobal(state, "symbol->string", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         return strNode(s.symbols[asSymbol(eval(car(node), s))])
+    }))
+
+    addGlobal(state, "string-len", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        return numNode(Number(len(asString(eval(car(node), s)))))
+    }))
+
+    addGlobal(state, "string-ref", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        return charNode(rune(asString(eval(car(node), s))[int(asNumber(car(cdr(node))))]))
     }))
 
     addGlobal(state, "string-foreach", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {

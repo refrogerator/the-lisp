@@ -5,16 +5,17 @@
 ;        (cons (car lst) (each-even (cdr lst) (not even)))
 ;        (each-even (cdr lst) (not even)))))
 
-(println (map first '((1 2) (3 4))))
+;(println (map first '((1 2) (3 4))))
 
-;(define-macro let (a . b)
-;              ;(cons (cons 'lambda (map first a)
-;              (list 'do 
-;                (list 'lambda (each-even a false))
-;                ; yea so uh this is gonna be ez
-;                (cons 'do b)))
-;
-;(let ((a 4)) 'c 'd)
+(define-macro let (a . b)
+              ;(cons (cons 'lambda (map first a)
+              ;(list 'println (list 'quote a)))
+              (list 'do 
+                (list 'lambda (map first a))
+                ; yea so uh this is gonna be ez
+                (cons 'do b)))
+
+(let ((a 4)) 'c 'd)
 
 ;(dotimes 10 (writeln "500!"))
 ;
@@ -28,7 +29,7 @@
 ;(println true)
 ;;(println #\c)
 ;(println (fn (a) a))
-(println (map (fn (a) (+ a 1)) (quote (1 2 3 4))))
+;(println (map (fn (a) (+ a 1)) (quote (1 2 3 4))))
 ;(foreach println (quote (1 2 3 4)))
 ;
 ;(println (symbol->string (quote amogus)))

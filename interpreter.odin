@@ -91,19 +91,22 @@ createInterpreter :: proc() -> ^InterpreterState {
     return state
 }
 
-//new_namespace :: proc(s: ^InterpreterState) {
-//    m := make(map[Symbol]^Node)
-//    append(&s.stack, m)
-//}
+new_namespace :: proc(s: ^InterpreterState) {
+    m := make(map[Symbol]^Node)
+    append(&s.stack, m)
+}
 
-//new_extending_namespace :: proc(s: ^InterpreterState) {
-//    m := new_clone(last(s.stack)^)
-//    append(&s.stack, m)
-//}
+new_extending_namespace :: proc(s: ^InterpreterState) {
+    m := make(map[Symbol]^Node)
+    for k, v in last(s.stack) {
+        m[k] = v
+    }
+    append(&s.stack, m)
+}
 
-//pop_namespace :: proc(s: ^InterpreterState) {
-//    pop(&s.stack)
-//}
+pop_namespace :: proc(s: ^InterpreterState) {
+    pop(&s.stack)
+}
 
 call_lambda_internal :: proc(s: ^InterpreterState, e: bool, lambda: Lambda, args: ^Node) -> ^Node {
     curIn := args
@@ -146,14 +149,18 @@ call_lambda_internal :: proc(s: ^InterpreterState, e: bool, lambda: Lambda, args
     if e {
         temp = evalL(lambda.body, s) 
     } else {
-        _temp := evalL(lambda.body, s)
-        println(_temp, s)
-        temp = eval(evalL(lambda.body, s), s) 
+        temp = evalL(lambda.body, s)
     }
 
     pop(&s.stack)
 
     return temp
+}
+
+call_macro :: proc(s: ^InterpreterState, macro: Macro, args: ^Node) -> ^Node {
+    temp := call_lambda_internal(s, false, Lambda(macro), args)
+    writeln(temp, s)
+    return eval(temp, s)
 }
 
 call_builtin :: proc(s: ^InterpreterState, builtin: Builtin, args: ^Node) -> ^Node {
@@ -166,12 +173,12 @@ call_no_eval :: proc(s: ^InterpreterState, fn: ^Node, args: ^Node) -> ^Node {
         temp := f.tr(args, s)
         return temp
     case Macro:
-        return call_lambda_internal(s, false, Lambda(f), args)
+        return call_macro(s, f, args)
     case Lambda:
         return call_lambda_internal(s, false, f, args)
     case:
-        fmt.eprintln("can't call non-function", f)
-        print(fn,s)
+        fmt.eprint("can't call non-function ")
+        println(fn, s)
         os.exit(1)
     }
 }
@@ -192,11 +199,11 @@ eval :: proc(node: ^Node, s: ^InterpreterState) -> ^Node {
             //mark_sweep_unpause(s.allocator)
             return temp
         case Macro:
-            return call_lambda_internal(s, false, Lambda(f), n.cdr)
+            return call_macro(s, f, n.cdr)
         case Lambda:
             return call_lambda_internal(s, true, f, n.cdr)
         case:
-            fmt.eprintln("can't call non-function", f)
+            fmt.eprint("can't call non-function ")
             print(n.car,s)
             os.exit(1)
         }
