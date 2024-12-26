@@ -179,6 +179,17 @@ asVector :: proc(node: ^Node) -> [dynamic]^Node {
     return nil
 }
 
+asMacro :: proc(node: ^Node) -> Macro {
+    if node == nil {
+        error("node is not of type macro")
+    }
+    if n, ok := node.(Macro); ok {
+        return n
+    }
+    error("node is not of type macro")
+    return Macro{}
+}
+
 isCons :: proc(node: ^Node) -> bool {
     if node == nil {
         return false

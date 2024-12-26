@@ -52,15 +52,15 @@ printInternal :: proc(input: ^Node, pretty: bool, s: ^InterpreterState) {
             }
             fmt.print(s.symbols[v])
         case Macro:
-            fmt.print("(macro ")
-            printInternal(v.args, pretty, s)
-            fmt.print(")")
+            fmt.print("#<macro ")
+            printInternal(v.args, false, s)
+            fmt.print(">")
         case Lambda:
-            fmt.print("(lambda ")
-            printInternal(v.args, pretty, s)
-            fmt.print(")")
+            fmt.print("#<lambda ")
+            printInternal(v.args, false, s)
+            fmt.print(">")
         case Builtin:
-            fmt.print("<builtin>")
+            fmt.print("#<builtin>")
         case [dynamic]^Node:
             fmt.print("#(")
             first2 := true

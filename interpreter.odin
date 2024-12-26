@@ -3,6 +3,7 @@ package main
 import "core:fmt"
 import "core:os"
 import "base:runtime"
+import "core:strings"
 
 error :: proc(s: string) {
     fmt.eprintln(s)
@@ -23,7 +24,7 @@ toSymbol :: proc(s: string, state: ^InterpreterState) -> Symbol {
             return Symbol(i)
         }
     }
-    append(&state.symbols, s)
+    append(&state.symbols, strings.clone(s))
     return Symbol(len(state.symbols) - 1)
 }
 

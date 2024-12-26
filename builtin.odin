@@ -131,6 +131,29 @@ builtin_stuff :: proc(state: ^InterpreterState) {
         return car(node)
     }))
 
+    addGlobal(state, "unquote", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        error("not inside a quasiquote")
+        return nil
+    }))
+
+    addGlobal(state, "quasiquote", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        cur := car(node)
+
+        unquote := toSymbol("unquote", s)
+        ret: ^Node = nil
+
+        for isCons(cur) {
+            if isCons(car(cur)) && isSymbol(car(car(cur))) && asSymbol(car(car(cur))) == unquote {
+                ret = consNode(eval(car(cdr(car(cur))), s), ret)
+            } else {
+                ret = consNode(car(cur), ret)
+            }
+            cur = cdr(cur)
+        }
+
+        return reverse(ret)
+    }))
+
     addGlobal(state, "lambda", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         return lambdaNode(car(node), cdr(node), last(s.stack)^ if len(s.stack) > 0 else nil)
     }))
@@ -141,6 +164,12 @@ builtin_stuff :: proc(state: ^InterpreterState) {
         s.globals[asSymbol(car(node))] = macroNode(car(cdr(node)), cdr(cdr(node)))
         return nil
     }))
+
+    addGlobal(state, "macroexpand", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        first := eval(car(node), s)
+        return call_lambda_internal(s, false, Lambda(asMacro(eval(car(first), s))), cdr(first))
+    }))
+
 
     //addGlobal(state, "let", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
     //}))

@@ -129,7 +129,7 @@ read_symbol :: proc(using reader: ^Reader) -> ^Node {
 
     for {
         switch input[offset] {
-        case '(', ')', '0'..='9', ';', '\'', ' ', '\t', '\n', '"':
+        case ',', '`', '(', ')', '0'..='9', ';', '\'', ' ', '\t', '\n', '"':
             return symNode(input[start:offset], state)
         }
         offset += 1
@@ -143,6 +143,14 @@ read_string :: proc(using reader: ^Reader) -> ^Node {
     }
     offset += 1
     return strNode(input[start:offset-1])
+}
+
+quasiquote :: proc(using reader: ^Reader) -> ^Node {
+    return consNode(symNode("quasiquote", reader.state), consNode(read_next(reader), nil))
+}
+
+unquote :: proc(using reader: ^Reader) -> ^Node {
+    return consNode(symNode("unquote", reader.state), consNode(read_next(reader), nil))
 }
 
 quote :: proc(using reader: ^Reader) -> ^Node {
@@ -161,6 +169,12 @@ read_next :: proc(using reader: ^Reader) -> ^Node {
             return read_string(reader) // offset += 1
         case '0'..='9':
             return read_number(reader)
+        case '`':
+            offset += 1
+            return quasiquote(reader)
+        case ',':
+            offset += 1
+            return unquote(reader)
         case '\'':
             offset += 1
             return quote(reader)

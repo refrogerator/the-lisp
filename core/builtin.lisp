@@ -1,10 +1,3 @@
-;; dotimes moment
-;; (dotimes (i 10) (println i))
-(define-macro dotimes (binding . body)
-              (list 'let (list (list (first binding) (second binding)))
-                    (cons 'while (cons (list '> (first binding) 0) 
-                          (cons (list 'set! (first binding) (list '- (first binding) 1)) body)))))
-
 ;; nice, a let!
 ;; (let ((a 2) (b 2)) (println b))
 (define-macro let (a . b)
@@ -12,6 +5,13 @@
                 (list 'lambda (map first a)
                   (cons 'do b))
                 (map second a)))
+
+;; dotimes moment
+;; (dotimes (i 10) (println i))
+(define-macro dotimes (binding . body)
+              (list 'let (list (list (first binding) (second binding)))
+                    (cons 'while (cons (list '> (first binding) 0) 
+                          (cons (list 'set! (first binding) (list '- (first binding) 1)) body)))))
 
 ;; list stuff
 (define (produce-cdrs c final)
