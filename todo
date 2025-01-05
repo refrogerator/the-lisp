@@ -1,4 +1,4 @@
 - recur (based!)
+- loop like in clojure
 - tail recursion modulo cons :flushed:
 - destructuring
-- unquote quasiquote backquote, all the quotes!

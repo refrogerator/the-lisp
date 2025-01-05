@@ -2,6 +2,11 @@ package main
 
 import "core:fmt"
 
+stackmaxx :: proc(node: ^Node, state: ^InterpreterState) -> ^Node {
+    append(last(state.allocStack), rawptr(node))
+    return node
+}
+
 basic_math_stuff :: proc(state: ^InterpreterState) {
     addGlobal(state, "+", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         return reduce(node, proc(a: ^Node, b: ^Node, s: ^InterpreterState) -> ^Node {
@@ -98,10 +103,10 @@ list_stuff :: proc(state: ^InterpreterState) {
     }
 
     addGlobal(state, "map", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
-        cur := eval(car(cdr(node)), s)
+        cur := stackmaxx(eval(car(cdr(node)), s), s)
         ret: ^Node = nil
 
-        e := eval(car(node), s)
+        e := stackmaxx(eval(car(node), s), s)
 
         for isCons(cur) {
             ret = consNode(call_no_eval(s, e, consNode(car(cur), nil)), ret)
@@ -112,9 +117,9 @@ list_stuff :: proc(state: ^InterpreterState) {
     }))
 
     addGlobal(state, "foreach", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
-        cur := eval(car(cdr(node)), s)
+        cur := stackmaxx(eval(car(cdr(node)), s), s)
 
-        e := eval(car(node), s)
+        e := stackmaxx(eval(car(node), s), s)
 
         for isCons(cur) {
             call_no_eval(s, e, consNode(car(cur), nil))
@@ -166,7 +171,7 @@ builtin_stuff :: proc(state: ^InterpreterState) {
     }))
 
     addGlobal(state, "macroexpand", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
-        first := eval(car(node), s)
+        first := stackmaxx(eval(car(node), s), s)
         return call_lambda_internal(s, false, Lambda(asMacro(eval(car(first), s))), cdr(first))
     }))
 
@@ -197,29 +202,33 @@ builtin_stuff :: proc(state: ^InterpreterState) {
         }
     }))
 
+    addGlobal(state, "eval", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+        return eval(car(node), s)
+    }))
+
     addGlobal(state, "nil?", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         return boolNode(eval(car(node), s) == nil)
     }))
 }
 
 basic_io_stuff :: proc(state: ^InterpreterState) {
-    addGlobal(state, "write", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+    addGlobal(state, "print", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         evalLW(node, s)
         return nil
     }))
 
-    addGlobal(state, "writeln", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+    addGlobal(state, "println", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         evalLW(node, s)
         fmt.print("\n")
         return nil
     }))
 
-    addGlobal(state, "print", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+    addGlobal(state, "pprint", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         evalLP(node, s)
         return nil
     }))
 
-    addGlobal(state, "println", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
+    addGlobal(state, "pprintln", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         evalLP(node, s)
         fmt.print("\n")
         return nil
@@ -269,7 +278,7 @@ string_stuff :: proc(state: ^InterpreterState) {
     addGlobal(state, "string-foreach", builtinNode(proc(node: ^Node, s: ^InterpreterState) -> ^Node {
         e := eval(car(node), s)
 
-        str := asString(eval(car(cdr(node)), s))
+        str := asString(stackmaxx(eval(car(cdr(node)), s), s))
 
         for c in str {
             call_no_eval(s, e, consNode(charNode(c), nil))

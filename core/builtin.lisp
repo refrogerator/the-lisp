@@ -13,6 +13,17 @@
                     (cons 'while (cons (list '> (first binding) 0) 
                           (cons (list 'set! (first binding) (list '- (first binding) 1)) body)))))
 
+;(define (list . a)
+;  (map eval a))
+
+;(define (foreach f l)
+;  (if (nil? l) nil
+;    (f (car l)) (foreach f (cdr l))))
+;
+;(define (map f l)
+;  (if (nil? l) nil
+;    (cons (f (car l)) (map f (cdr l)))))
+
 ;; list stuff
 (define (produce-cdrs c final)
   (if (> c 0)

@@ -80,7 +80,7 @@ createInterpreter :: proc() -> ^InterpreterState {
     }
     defer delete(file);
 
-    context.allocator = state.allocator
+    //context.allocator = state.allocator
 
     addGlobal(state, "nil", nil)
 
@@ -207,11 +207,11 @@ eval :: proc(node: ^Node, s: ^InterpreterState) -> ^Node {
     case Cons:
         #partial switch f in eval(n.car, s) {
         case Builtin:
-            //append(&s.allocStack, make([dynamic]rawptr, (cast(^MarkSweepGC)s.allocator.data).backing_allocator))
+            append(&s.allocStack, make([dynamic]rawptr, (cast(^MarkSweepGC)s.allocator.data).backing_allocator))
             //mark_sweep_pause(s.allocator)
             temp := f.tr(n.cdr, s)
 
-            //delete(pop(&s.allocStack))
+            delete(pop(&s.allocStack))
             //mark_sweep_unpause(s.allocator)
             return temp
         case Macro:

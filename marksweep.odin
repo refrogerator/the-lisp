@@ -128,26 +128,26 @@ mark_sweep_run_gc :: proc(allocator: ^MarkSweepGC) {
 
     for stack in allocator.interpreter.allocStack {
         for entry in stack {
-            if alloc := mark_sweep_find_alloc(allocator, entry); alloc != nil {
-                alloc.marked = true
-            }
-            //mark_sweep_mark_precise(cast(^Node)entry, allocator)
+            //if alloc := mark_sweep_find_alloc(allocator, entry); alloc != nil {
+            //    alloc.marked = true
+            //}
+            mark_sweep_mark_precise(cast(^Node)entry, allocator)
         }
     }
 
     for _, global in allocator.interpreter.globals {
-        if alloc := mark_sweep_find_alloc(allocator, cast(rawptr)global); alloc != nil {
-            alloc.marked = true
-        }
-        //mark_sweep_mark_precise(global, allocator)
+        //if alloc := mark_sweep_find_alloc(allocator, cast(rawptr)global); alloc != nil {
+        //    alloc.marked = true
+        //}
+        mark_sweep_mark_precise(global, allocator)
     }
 
     for locals in allocator.interpreter.stack {
         for _, local in locals {
-            if alloc := mark_sweep_find_alloc(allocator, cast(rawptr)local); alloc != nil {
-                alloc.marked = true
-            }
-            //mark_sweep_mark_precise(local, allocator)
+            //if alloc := mark_sweep_find_alloc(allocator, cast(rawptr)local); alloc != nil {
+            //    alloc.marked = true
+            //}
+            mark_sweep_mark_precise(local, allocator)
         }
     }
 
@@ -156,6 +156,7 @@ mark_sweep_run_gc :: proc(allocator: ^MarkSweepGC) {
     for allocation, i in allocator.allocations {
         if !allocation.marked {
             runtime.mem_free(raw_data(allocation.pointer), allocator.backing_allocator)
+            fmt.eprintln("freed", raw_data(allocation.pointer))
             freed += 1
         }
     }
@@ -204,7 +205,7 @@ mark_sweep_resize :: proc(allocator: ^MarkSweepGC, old_memory: rawptr, old_size:
 
 mark_sweep_alloc :: proc(allocator: ^MarkSweepGC, size: int, alignment := runtime.DEFAULT_ALIGNMENT, loc := #caller_location) -> (data: []byte, err: runtime.Allocator_Error) {
     //if allocator.allocs_since_last_gc >= 20 {
-        //mark_sweep_run_gc(allocator)
+        mark_sweep_run_gc(allocator)
     //}
 
     allocator.allocs_since_last_gc += 1
